@@ -40,10 +40,11 @@ attributes:
         - run "yarn run webpack-dev"
         - task "overlay:apply"
         - task "assets:dump"
-        - run "bin/console --env=prod doctrine:schema:update --force"
-        - run "bin/console pim:product:index --all"
     init:
-      steps: []
+      steps:
+        - run "bin/console --env=prod doctrine:schema:update --force"
+        - run "bin/console akeneo:elasticsearch:reset-indexes"
+        - run "bin/console pim:product:index --all"
     migrate:
       steps: []
   frontend:

@@ -202,3 +202,18 @@ command('feature xdebug cli (on|off)'):
     run ws service php-fpm restart
     echo 'Done'
 
+command('db import <database_file>'):
+  env:
+    APP_HOST: =@('hostname')
+  exec: |
+    #!bash(harness:/)|=
+    echo "Importing ={input.argument('database_file')}"
+    docker-compose exec -u build console bash -i -c 'set -e -o pipefail; zcat ={input.argument('database_file')} | mysql -h "$DB_HOST" -u root -p"$DB_ROOT_PASS" "$DB_NAME"'
+    echo "Running doctrine:schema:update"
+    passthru docker-compose exec -u build console php bin/console doctrine:schema:update --force
+    echo "Reindexing Elasticsearch"
+    run docker-compose exec -u build console php bin/console akeneo:elasticsearch:reset-indexes -n
+    run docker-compose exec -u build console php bin/console pim:product:index --all
+    echo "Clearing cache"
+    run docker-compose exec -u build console php bin/console c:c
+    echo "Done"
